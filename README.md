@@ -6,6 +6,8 @@ A 'yml' file containing a conda environment can be used to generate a proper env
 
 [Conda cheat sheet]: https://docs.conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf
 
+TODO : Some library aren't referenced by conda. Write the list of dependencies in a .txt and ask to install them through pip
+
 
 
 ## Parrallel datasets
