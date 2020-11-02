@@ -15,9 +15,11 @@ DE_GLOVE_FILE = Path("de_glove.txt")
 EN_FASTTEXT_FILE = Path("cc.en.300.vec")
 DE_FASTTEXT_FILE = Path("cc.de.300.vec")
 
-SENTENCES_WIKIPEDIA = Path("de-en.tmx") # TMX is a specific file format for aligned corpus data (similar to XML)
+RAW_SENTENCES_WIKIPEDIA = Path("de-en.tmx")  # TMX is a specific file format for aligned corpus data (similar to XML)
+SENTENCES_WIKIPEDIA = Path("de-en.csv")  # The Pandas Dataframe containing cleaned sentences are stored in a pickle file
 
 # Key IDs
+RAW_SENTENCES = "raw_sentences"
 SENTENCES = "sentences"
 EN_WORD2VEC = "en_word2vec"
 DE_WORD2VEC = "de_word2vec"
@@ -27,6 +29,7 @@ EN_FASTTEXT = "en_fasttext"
 DE_FASTTEXT = "de_fasttext"
 
 paths = {
+        RAW_SENTENCES : PROJECT_ABS_FOLDER.joinpath(DATASET_REL_FOLDER, RAW_SENTENCES_WIKIPEDIA),
         SENTENCES : PROJECT_ABS_FOLDER.joinpath(DATASET_REL_FOLDER, SENTENCES_WIKIPEDIA),
         EN_WORD2VEC : PROJECT_ABS_FOLDER.joinpath(EMBEDDING_REL_FOLDER, EN_WORD2VEC_FILE),
         DE_WORD2VEC : PROJECT_ABS_FOLDER.joinpath(EMBEDDING_REL_FOLDER, DE_WORD2VEC_FILE),
@@ -34,4 +37,4 @@ paths = {
         DE_GLOVE : PROJECT_ABS_FOLDER.joinpath(EMBEDDING_REL_FOLDER, DE_GLOVE_FILE),
         EN_FASTTEXT : PROJECT_ABS_FOLDER.joinpath(EMBEDDING_REL_FOLDER, EN_FASTTEXT_FILE),
         DE_FASTTEXT : PROJECT_ABS_FOLDER.joinpath(EMBEDDING_REL_FOLDER, DE_FASTTEXT_FILE)
-    } 
+    }

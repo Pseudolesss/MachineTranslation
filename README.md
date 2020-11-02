@@ -4,9 +4,15 @@
 
 A 'yml' file containing a conda environment can be used to generate a proper environment in order to launch this project
 
-[Conda cheat sheet]: https://docs.conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf
+[Conda cheat sheet](https://docs.conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf )
 
-TODO : Some library aren't referenced by conda. Write the list of dependencies in a .txt and ask to install them through pip
+TODO: update the yaml file with
+
+- Pandas
+
+TODO: give a list of dependencies available only for pip in a .txt (pip install dependencies.txt)
+
+- translate-toolkit
 
 
 

@@ -1,5 +1,6 @@
 from preprocess import Preprocess
 import parameters as PRM
+import utils
 
 class Testing(object):
     """description of class"""
@@ -40,18 +41,18 @@ class Testing(object):
         p.load_wiki()
         return p
 
-    def display_wiki(self, cleaning=False):
+    def display_wiki(self):
         preprocess = self.load_wiki()
 
-        for i in range(PRM.MAX_NB_SENTENCES):
-            if cleaning:
-                sentences_pair = list(map(preprocess.clean_sentence, preprocess.next_pair_sentences()))
-            else:
-                sentences_pair = preprocess.next_pair_sentences()
+        for i in range(len(preprocess.sentences)):
+            source = preprocess.sentences.iloc[i][PRM.SOURCE]
+            target = preprocess.sentences.iloc[i][PRM.TARGET]
 
             print()
-            print(sentences_pair[0])
-            print(sentences_pair[-1])
+            print(source)
+            print(utils.sentence2tokens(source))
+            print(target)
+            print(utils.sentence2tokens(target))
 
 
 

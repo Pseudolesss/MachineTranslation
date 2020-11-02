@@ -2,9 +2,12 @@ from translate.storage.tmx import tmxfile
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec # For the German word2vec in Glove format
 from gensim.test.utils import datapath, get_tmpfile
+import pandas as pd
+import os.path
 import filespath as P
 import parameters as PRM
-import re
+import utils
+
 
 class Preprocess(object):
     """description of class"""
@@ -40,28 +43,19 @@ class Preprocess(object):
         self.DE_vec = KeyedVectors.load_word2vec_format(P.paths[P.DE_FASTTEXT], limit=PRM.MAX_NB_VECTOR)
 
     def load_wiki(self):
-        
-        with open(P.paths[P.SENTENCES], "rb") as file_pairs:
-            self.sentences = tmxfile(file_pairs, 'de', 'en').unit_iter()
 
-    def next_pair_sentences(self):
-        if self.sentences is None:
-            return None, None
+        # Check if cleaned sentences panda dataframe exists
+        if os.path.isfile(P.paths[P.SENTENCES]):
+            self.sentences = pd.read_csv(P.paths[P.SENTENCES], nrows=PRM.MAX_NB_SENTENCES)
 
-        node = next(self.sentences)
-        return node.source, node.gettarget()
+        else:
+            with open(P.paths[P.RAW_SENTENCES], "rb") as file_pairs:
+                cleaned_sentences = pd.DataFrame(columns=[PRM.SOURCE, PRM.TARGET])
+                for iter, raw_pairs in enumerate(tmxfile(file_pairs, 'de', 'en').unit_iter()):
+                    cleaned_sentences.loc[iter] = list(map(utils.clean_sentence, [raw_pairs.source, raw_pairs.gettarget()]))
+                cleaned_sentences.to_csv(P.paths[P.SENTENCES], sep=',')
+                self.sentences = cleaned_sentences
 
-    def clean_sentence(self, sentence):
-        # Replace Number by Unknowed token and ponctuation by spaces that will be ignored later.
-        # Convert all in lowercase.
-        # NOT Removing Stopwords
-        # NO Stemming and Lemmatization (unproper to translation)
-        # NOT Removing the words having length <= 2 (maybe should be done)
-
-        sentence = re.sub(PRM.UNRELEVANT_CHAR_REGEX, PRM.UNRELEVANT_CHAR_REPLACEMENT, sentence)
-        sentence = re.sub(PRM.UNRELEVANT_DIGIT_REGEX, PRM.UNRELEVANT_DIGIT_REPLACEMENT, sentence)
-
-        return sentence.lower()
 
     # To be used as a vectorial mapping function
     # Individual vector SHOULD NOT be normalized (embeddings aren't normalized either)
