@@ -1,7 +1,8 @@
 from translate.storage.tmx import tmxfile
 from gensim.models import KeyedVectors
-from gensim.scripts.glove2word2vec import glove2word2vec # For the German word2vec in Glove format
+from gensim.scripts.glove2word2vec import glove2word2vec  # For the German word2vec in Glove format
 from gensim.test.utils import datapath, get_tmpfile
+from tmx2dataframe import tmx2dataframe
 import pandas as pd
 import os.path
 import filespath as P
@@ -42,19 +43,18 @@ class Preprocess(object):
         self.EN_vec = KeyedVectors.load_word2vec_format(P.paths[P.EN_FASTTEXT], limit=PRM.MAX_NB_VECTOR)
         self.DE_vec = KeyedVectors.load_word2vec_format(P.paths[P.DE_FASTTEXT], limit=PRM.MAX_NB_VECTOR)
 
-    def load_wiki(self):
+    def load_wiki(self, offset=0, nb_pair_sentences=PRM.MAX_NB_SENTENCES):
 
         # Check if cleaned sentences panda dataframe exists
         if os.path.isfile(P.paths[P.SENTENCES]):
-            self.sentences = pd.read_csv(P.paths[P.SENTENCES], nrows=PRM.MAX_NB_SENTENCES)
+            self.sentences = pd.read_csv(P.paths[P.SENTENCES], skiprows=offset, nrows=nb_pair_sentences)
 
         else:
-            with open(P.paths[P.RAW_SENTENCES], "rb") as file_pairs:
-                cleaned_sentences = pd.DataFrame(columns=[PRM.SOURCE, PRM.TARGET])
-                for iter, raw_pairs in enumerate(tmxfile(file_pairs, 'de', 'en').unit_iter()):
-                    cleaned_sentences.loc[iter] = list(map(utils.clean_sentence, [raw_pairs.source, raw_pairs.gettarget()]))
-                cleaned_sentences.to_csv(P.paths[P.SENTENCES], sep=',')
-                self.sentences = cleaned_sentences
+            _, cleaned_sentences = tmx2dataframe.read(str(P.paths[P.RAW_SENTENCES]))
+            cleaned_sentences = cleaned_sentences[[PRM.SOURCE, PRM.TARGET]]
+            cleaned_sentences = cleaned_sentences.applymap(utils.clean_sentence)
+            cleaned_sentences.to_csv(P.paths[P.SENTENCES], sep=',')
+            self.sentences = pd.read_csv(P.paths[P.SENTENCES], skiprows=offset, nrows=nb_pair_sentences)
 
 
     # To be used as a vectorial mapping function

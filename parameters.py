@@ -14,5 +14,5 @@ UNRELEVANT_CHAR_REPLACEMENT = " "  # White space will be drop at tokenazation
 UNRELEVANT_DIGIT_REGEX = r'\d+'
 UNRELEVANT_DIGIT_REPLACEMENT = " " + UNK_TOKEN + " "
 
-SOURCE = "DE"
-TARGET = "EN"
+SOURCE = "source_sentence"  # DO NOT CHANGE German sentences
+TARGET = "target_sentence"  # DO NOT CHANGE English sentences

@@ -13,6 +13,7 @@ TODO: update the yaml file with
 TODO: give a list of dependencies available only for pip in a .txt (pip install dependencies.txt)
 
 - translate-toolkit
+- tmx2dataframe
 
 
 
