@@ -6,7 +6,6 @@ if __name__ == "__main__":
 
 	#test.load_word2vec()
 	#test.load_glove()
-	test.load_fasttext()
+	#test.load_fasttext()
 
-	test.display_wiki(cleaning=False)
-	test.display_wiki(cleaning=True)
+	test.display_wiki()
