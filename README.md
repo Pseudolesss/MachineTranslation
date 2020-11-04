@@ -8,7 +8,11 @@ A 'yml' file containing a conda environment can be used to generate a proper env
 
 TODO: update the yaml file with
 
-- Pandas
+- pandas
+- jupyter
+- pytorch
+- cudatoolkit
+- cudnn
 
 TODO: give a list of dependencies available only for pip in a .txt (pip install dependencies.txt)
 
@@ -17,7 +21,7 @@ TODO: give a list of dependencies available only for pip in a .txt (pip install 
 
 
 
-## Parrallel datasets
+## Parallel datasets
 
 The datasets have to be decompressed and placed in the **datasets** folder
 
