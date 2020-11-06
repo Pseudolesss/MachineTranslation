@@ -47,7 +47,7 @@ class Preprocess(object):
 
         # Check if cleaned sentences panda dataframe exists
         if os.path.isfile(P.paths[P.SENTENCES]):
-            self.sentences = pd.read_csv(P.paths[P.SENTENCES], skiprows=offset, nrows=nb_pair_sentences)
+            self.sentences = pd.read_csv(P.paths[P.SENTENCES], skiprows=offset, nrows=nb_pair_sentences)[[PRM.SOURCE, PRM.TARGET]]
 
         else:
             _, cleaned_sentences = tmx2dataframe.read(str(P.paths[P.RAW_SENTENCES]))
@@ -55,6 +55,14 @@ class Preprocess(object):
             cleaned_sentences = cleaned_sentences.applymap(utils.clean_sentence)
             cleaned_sentences.to_csv(P.paths[P.SENTENCES], sep=',')
             self.sentences = pd.read_csv(P.paths[P.SENTENCES], skiprows=offset, nrows=nb_pair_sentences)
+
+    def drop_longest_wiki_sentences(self, max_length_threshold=PRM.MAX_LENGTH_SENCETENCE):
+        if self.sentences is None:
+            return
+
+        count_word = lambda x: len(utils.sentence2tokens(x))
+        sentences_nb_words = self.sentences.applymap(count_word)
+        self.sentences = self.sentences.loc[(sentences_nb_words < max_length_threshold).all(1)]
 
 
     # To be used as a vectorial mapping function
