@@ -1,35 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchtext.datasets import Multi30k
 from torchtext.data import Field, BucketIterator
-import numpy as np
-import spacy
 import random
 from torch.utils.tensorboard import SummaryWriter  # to print to tensorboard
-from utils import translate_sentence, bleu, save_checkpoint, load_checkpoint, sentence2tokens, DataFrameDataset
+from utils import translate_sentence, bleu, save_checkpoint, load_checkpoint,\
+    DataFrameDataset, DE_sentence_to_bytes_representation_string
 
 import parameters as PRM
 from preprocess import Preprocess
-
-spacy_ger = spacy.load('de_core_news_md')
-spacy_eng = spacy.load("en_core_web_sm")
-
-
-def tokenize_ger(text):
-    ret = [tok.text for tok in spacy_ger.tokenizer(text)]
-    return sentence2tokens(text)
-
-
-def tokenize_eng(text):
-    return [tok.text for tok in spacy_eng.tokenizer(text)]
-
-
-german = Field(
-    lower=True, init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
-
-english = Field(
-    lower=True, init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
 
 # Reference to data
 preprocessing = Preprocess()
@@ -37,23 +16,49 @@ preprocessing.load_wiki()
 # Drop pairs which are too long
 preprocessing.drop_longest_wiki_sentences()
 
-# train_data, valid_data, test_data = Multi30k.splits(
-#     exts=(".de", ".en"), fields=(german, english))
-
+# TODO select one of the embedding and train/save in a different file/package
+# preprocessing.load_word2vec()
+# preprocessing.load_glove()
 preprocessing.load_fasttext()
 
-# train_data = DataFrameDataset(preprocessing.sentences, {'review': PRM.SOURCE})
-german.build_vocab(preprocessing.sentences[PRM.SOURCE].apply(lambda x: x.split()), max_size=10000, min_freq=2)
-english.build_vocab(preprocessing.sentences[PRM.TARGET].apply(lambda x: x.split()), max_size=10000, min_freq=2)
+# Check for the German word2vec embedding with bytes representation
+if preprocessing.bytes_representation_for_DE_word:
+    preprocessing.sentences[PRM.SOURCE] = preprocessing.sentences[PRM.SOURCE]\
+        .apply(DE_sentence_to_bytes_representation_string)
+
+german = Field(init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
+
+english = Field(is_target=True, init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
+
+
+train_data, test_data = DataFrameDataset(
+    df=preprocessing.sentences,
+    fields=[
+        (PRM.SOURCE, german),
+        (PRM.TARGET, english)
+    ]
+).split(split_ratio=PRM.SPLIT_RATIO)
+
+german.build_vocab(train_data,
+                   max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ)
+english.build_vocab(train_data,
+                    max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ)
+
+# Add pretrained vectors to the vocabulary
+german.vocab.set_vectors(
+    preprocessing.DE_vec.stoi, preprocessing.DE_vec.vectors, preprocessing.DE_vec.dim)
+english.vocab.set_vectors(
+    preprocessing.EN_vec.stoi, preprocessing.EN_vec.vectors, preprocessing.EN_vec.dim)
+
 
 class Encoder(nn.Module):
-    def __init__(self, input_size, embedding_size, hidden_size, num_layers, p):
+    def __init__(self, german_field, embedding_size, hidden_size, num_layers, p):
         super(Encoder, self).__init__()
         self.dropout = nn.Dropout(p)
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        self.embedding = nn.Embedding(input_size, embedding_size)
+        self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(german_field.vocab.vectors))
         self.rnn = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=p)
 
     def forward(self, x):
@@ -70,14 +75,14 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(
-        self, input_size, embedding_size, hidden_size, output_size, num_layers, p
+        self, german_field, embedding_size, hidden_size, output_size, num_layers, p
     ):
         super(Decoder, self).__init__()
         self.dropout = nn.Dropout(p)
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        self.embedding = nn.Embedding(input_size, embedding_size)
+        self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(german_field.vocab.vectors))
         self.rnn = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=p)
         self.fc = nn.Linear(hidden_size, output_size)
 
@@ -144,35 +149,33 @@ class Seq2Seq(nn.Module):
 # Model hyperparameters
 load_model = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-input_size_encoder = len(german.vocab)
-input_size_decoder = len(english.vocab)
-output_size = len(english.vocab)
-encoder_embedding_size = PRM.DIM_VEC
-decoder_embedding_size = PRM.DIM_VEC
-hidden_size = 1024  # Needs to be the same for both RNN's
-num_layers = 2
-enc_dropout = 0.5
-dec_dropout = 0.5
+output_size = len(english.vocab)  # The input size has been defined implicitly by the embedding layers
+embedding_size = PRM.DIM_VEC
+hidden_size = PRM.HIDDEN_SIZE  # Needs to be the same for both RNN's
+num_layers = PRM.NUM_LAYERS
+enc_dropout = PRM.ENC_DROPOUT
+dec_dropout = PRM.DEC_DROPOUT
 
 # Tensorboard to get nice loss plot
 writer = SummaryWriter(f"runs/loss_plot")
 step = 0
 
-train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (train_data, valid_data, test_data),
+train_iterator, test_iterator = BucketIterator.splits(
+    (train_data, test_data),
     batch_size=PRM.BATCH_SIZE,
     sort_within_batch=True,
-    sort_key=lambda x: len(x.src),
+    sort_key=lambda x: len(getattr(x, PRM.SOURCE)),  # To save computation resourcing with the padding
+                                                    # (have batch with similar sentences lenghts)
     device=device,
 )
 
 encoder_net = Encoder(
-    input_size_encoder, encoder_embedding_size, hidden_size, num_layers, enc_dropout
+    german, embedding_size, hidden_size, num_layers, enc_dropout
 ).to(device)
 
 decoder_net = Decoder(
-    input_size_decoder,
-    decoder_embedding_size,
+    german,
+    embedding_size,
     hidden_size,
     output_size,
     num_layers,
@@ -189,7 +192,8 @@ if load_model:
     load_checkpoint(torch.load("my_checkpoint.pth.tar"), model, optimizer)
 
 
-sentence = "ein boot mit mehreren männern darauf wird von einem großen pferdegespann ans ufer gezogen."
+# sentence = "ein boot mit mehreren männern darauf wird von einem großen pferdegespann ans ufer gezogen."
+sentence = "der edison trust attackierte also vor allem die punkte"
 
 for epoch in range(PRM.NUM_EPOCHS):
     print(f"[Epoch {epoch} / {PRM.NUM_EPOCHS}]")
@@ -200,8 +204,7 @@ for epoch in range(PRM.NUM_EPOCHS):
     model.eval()
 
     translated_sentence = translate_sentence(
-        model, sentence, german, english, device, max_length=50
-    )
+        model, sentence, german, english, device, max_length=PRM.MAX_LENGTH_SENCETENCE)
 
     print(f"Translated example sentence: \n {translated_sentence}")
 
@@ -209,8 +212,8 @@ for epoch in range(PRM.NUM_EPOCHS):
 
     for batch_idx, batch in enumerate(train_iterator):
         # Get input and targets and get to cuda
-        inp_data = batch.src.to(device)
-        target = batch.trg.to(device)
+        inp_data = getattr(batch, PRM.SOURCE).to(device)
+        target = getattr(batch, PRM.TARGET).to(device)
 
         # Forward prop
         output = model(inp_data, target)

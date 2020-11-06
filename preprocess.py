@@ -8,6 +8,7 @@ import os.path
 import filespath as P
 import parameters as PRM
 import utils
+import torchtext.vocab as vocab
 
 
 class Preprocess(object):
@@ -30,18 +31,27 @@ class Preprocess(object):
 
     def load_word2vec(self):
         self.bytes_representation_for_DE_word = True
-        self.EN_vec = KeyedVectors.load_word2vec_format(P.paths[P.EN_WORD2VEC], binary=True, limit=PRM.MAX_NB_VECTOR)
-        self.DE_vec = self.model_from_glove_format(P.paths[P.DE_WORD2VEC])
+
+        # Check if text embeddings exist for english only, if not need to extract it from the google BIN model
+        if os.path.isfile(P.paths[P.EN_WORD2VEC]):
+            self.EN_vec = vocab.Vectors(P.paths[P.EN_WORD2VEC], max_vectors=PRM.MAX_NB_VECTOR)
+        else:
+            binary_embedding = KeyedVectors.load_word2vec_format(P.paths[P.EN_WORD2VEC_BIN], binary=True
+                                                                 , limit=300000)  # Hard coded limit or 10GB file for full embedding
+            binary_embedding.save_word2vec_format(P.paths[P.EN_WORD2VEC])
+            self.EN_vec = vocab.Vectors(P.paths[P.EN_WORD2VEC], max_vectors=PRM.MAX_NB_VECTOR)
+
+        self.DE_vec = vocab.Vectors(P.paths[P.DE_WORD2VEC], max_vectors=PRM.MAX_NB_VECTOR)
 
     def load_glove(self):
         self.bytes_representation_for_DE_word = False
-        self.EN_vec = self.model_from_glove_format(P.paths[P.EN_GLOVE])
-        self.DE_vec = self.model_from_glove_format(P.paths[P.DE_GLOVE])
+        self.EN_vec = vocab.Vectors(P.paths[P.EN_GLOVE], max_vectors=PRM.MAX_NB_VECTOR)
+        self.DE_vec = vocab.Vectors(P.paths[P.DE_GLOVE], max_vectors=PRM.MAX_NB_VECTOR)
 
     def load_fasttext(self):
         self.bytes_representation_for_DE_word = False
-        self.EN_vec = KeyedVectors.load_word2vec_format(P.paths[P.EN_FASTTEXT], limit=PRM.MAX_NB_VECTOR)
-        self.DE_vec = KeyedVectors.load_word2vec_format(P.paths[P.DE_FASTTEXT], limit=PRM.MAX_NB_VECTOR)
+        self.EN_vec = vocab.Vectors(P.paths[P.EN_FASTTEXT], max_vectors=PRM.MAX_NB_VECTOR)
+        self.DE_vec = vocab.Vectors(P.paths[P.DE_FASTTEXT], max_vectors=PRM.MAX_NB_VECTOR)
 
     def load_wiki(self, offset=0, nb_pair_sentences=PRM.MAX_NB_SENTENCES):
 

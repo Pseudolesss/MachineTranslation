@@ -14,6 +14,8 @@ dependencies:
   - pandas
   - torchtext
   - spacy
+  - tensorboard
+  - pytorch-gpu
   - pip:
     - lxml==4.6.1
     - tmx2dataframe==0.3.0

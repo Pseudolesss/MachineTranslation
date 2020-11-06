@@ -9,14 +9,15 @@ class Testing(object):
     DE_test_word = "für"
 
     def display_embeddings(self, preprocess):
-        for word in preprocess.EN_vec.vocab:
-            print(word)
-
-        for word in preprocess.DE_vec.vocab:
-            print(word)
-
-        print(preprocess.string2vec(self.EN_test_word))
-        print(preprocess.string2vec(self.DE_test_word, is_EN=False))
+        return
+        # for word in preprocess.EN_vec.vocab:
+        #     print(word)
+        #
+        # for word in preprocess.DE_vec.vocab:
+        #     print(word)
+        #
+        # print(preprocess.string2vec(self.EN_test_word))
+        # print(preprocess.string2vec(self.DE_test_word, is_EN=False))
 
     # TODO careful the "official" embedding vectors have capital letter ("The" and "the" present)
     # TODO "official" embedding sorted by frequency a bit strangely ("in" shoudn't be the most popular but "the")

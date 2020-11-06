@@ -19,6 +19,11 @@ def clean_sentence(sentence):
 
     return sentence.lower()
 
+def DE_sentence_to_bytes_representation_string(sentence):
+    # The sentence is considered as CLEANED
+    tokens = sentence2tokens(sentence)
+    return " ".join([str(token.encode("utf-8")) for token in tokens])
+
 
 
 ############################################################################################
@@ -39,9 +44,9 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
 
     # Create tokens using spacy and everything in lower case (which is what our vocab is)
     if type(sentence) == str:
-        tokens = [token.text.lower() for token in spacy_ger(sentence)]
+        tokens = sentence2tokens(clean_sentence(sentence))
     else:
-        tokens = [token.lower() for token in sentence]
+        tokens = [clean_sentence(word) for word in sentence]
 
     # print(tokens)
 
@@ -51,28 +56,35 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
     tokens.append(german.eos_token)
 
     # Go through each german token and convert to an index
-    text_to_indices = [german.vocab.stoi[token] for token in tokens]
+    text_to_indices = list()
+    for token in tokens:
+        if token in german.vocab.stoi.keys():
+            text_to_indices.append(german.vocab.stoi[token])
+        else:
+            text_to_indices.append(german.vocab.stoi[PRM.UNK_TOKEN])
+
+    # text_to_indices = [german.vocab.stoi[token] for token in tokens if token in german.vocab.stoi.keys() else german.vocab.stoi[PRM.UNK_TOKEN]]
 
     # Convert to Tensor
     sentence_tensor = torch.LongTensor(text_to_indices).unsqueeze(1).to(device)
 
     # Build encoder hidden, cell state
-    with torch.no_grad():
+    with torch.no_grad():  # Context which mean we do not compute back propagation
         hidden, cell = model.encoder(sentence_tensor)
 
-    outputs = [english.vocab.stoi["<sos>"]]
+    outputs = [english.vocab.stoi[PRM.SOS_TOKEN]]
 
     for _ in range(max_length):
         previous_word = torch.LongTensor([outputs[-1]]).to(device)
 
-        with torch.no_grad():
+        with torch.no_grad():  # Context which mean we do not compute back propagation
             output, hidden, cell = model.decoder(previous_word, hidden, cell)
             best_guess = output.argmax(1).item()
 
         outputs.append(best_guess)
 
         # Model predicts it's the end of the sentence
-        if output.argmax(1).item() == english.vocab.stoi["<eos>"]:
+        if output.argmax(1).item() == english.vocab.stoi[PRM.EOS_TOKEN]:
             break
 
     translated_sentence = [english.vocab.itos[idx] for idx in outputs]
@@ -86,8 +98,8 @@ def bleu(data, model, german, english, device):
     outputs = []
 
     for example in data:
-        src = vars(example)["src"]
-        trg = vars(example)["trg"]
+        src = vars(example)[PRM.SOURCE]
+        trg = vars(example)[PRM.TARGET]
 
         prediction = translate_sentence(model, src, german, english, device)
         prediction = prediction[:-1]  # remove <eos> token
