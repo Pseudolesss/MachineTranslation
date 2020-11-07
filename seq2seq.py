@@ -199,7 +199,10 @@ if load_model:
 
 # sentence = "ein boot mit mehreren männern darauf wird von einem großen pferdegespann ans ufer gezogen."
 # sentence = "der edison trust attackierte also vor allem die punkte"
-sentence = "was ist improvac und wofür wird es angewendet" #"ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
+# sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"  # "was ist improvac und wofür wird es angewendet"
+sentence = " ".join(getattr(test_data.examples[0], "source_sentence"))
+print(sentence)
+print(" ".join(getattr(test_data.examples[0], "target_sentence")))
 
 for epoch in range(PRM.NUM_EPOCHS):
     print(f"[Epoch {epoch} / {PRM.NUM_EPOCHS}]")
