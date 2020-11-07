@@ -26,6 +26,7 @@ if preprocessing.bytes_representation_for_DE_word:
     preprocessing.sentences[PRM.SOURCE] = preprocessing.sentences[PRM.SOURCE]\
         .apply(DE_sentence_to_bytes_representation_string)
 
+
 german = Field(init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
 
 english = Field(is_target=True, init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
@@ -39,26 +40,27 @@ train_data, test_data = DataFrameDataset(
     ]
 ).split(split_ratio=PRM.SPLIT_RATIO)
 
+
 german.build_vocab(train_data,
-                   max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ)
+                   max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ, vectors=preprocessing.DE_vec)
 english.build_vocab(train_data,
-                    max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ)
+                    max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ, vectors=preprocessing.EN_vec)
 
 # Add pretrained vectors to the vocabulary
-german.vocab.set_vectors(
-    preprocessing.DE_vec.stoi, preprocessing.DE_vec.vectors, preprocessing.DE_vec.dim)
-english.vocab.set_vectors(
-    preprocessing.EN_vec.stoi, preprocessing.EN_vec.vectors, preprocessing.EN_vec.dim)
+# german.vocab.set_vectors(
+#     preprocessing.DE_vec.stoi, preprocessing.DE_vec.vectors, preprocessing.DE_vec.dim)
+# english.vocab.set_vectors(
+#     preprocessing.EN_vec.stoi, preprocessing.EN_vec.vectors, preprocessing.EN_vec.dim)
 
 
 class Encoder(nn.Module):
-    def __init__(self, german_field, embedding_size, hidden_size, num_layers, p):
+    def __init__(self, german_field, input_size, embedding_size, hidden_size, num_layers, p):
         super(Encoder, self).__init__()
         self.dropout = nn.Dropout(p)
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(german_field.vocab.vectors))
+        self.embedding = nn.Embedding(input_size, PRM.DIM_VEC).from_pretrained(torch.FloatTensor(german_field.vocab.vectors))
         self.rnn = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=p)
 
     def forward(self, x):
@@ -75,14 +77,14 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(
-        self, german_field, embedding_size, hidden_size, output_size, num_layers, p
+        self, english_field, input_size, embedding_size, hidden_size, output_size, num_layers, p
     ):
         super(Decoder, self).__init__()
         self.dropout = nn.Dropout(p)
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(german_field.vocab.vectors))
+        self.embedding = nn.Embedding(input_size, PRM.DIM_VEC).from_pretrained(torch.FloatTensor(english_field.vocab.vectors))
         self.rnn = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=p)
         self.fc = nn.Linear(hidden_size, output_size)
 
@@ -150,6 +152,7 @@ class Seq2Seq(nn.Module):
 load_model = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
+input_size = len(german.vocab)
 output_size = len(english.vocab)  # The input size has been defined implicitly by the embedding layers
 embedding_size = PRM.DIM_VEC
 hidden_size = PRM.HIDDEN_SIZE  # Needs to be the same for both RNN's
@@ -171,11 +174,12 @@ train_iterator, test_iterator = BucketIterator.splits(
 )
 
 encoder_net = Encoder(
-    german, embedding_size, hidden_size, num_layers, enc_dropout
+    german, input_size, embedding_size, hidden_size, num_layers, enc_dropout
 ).to(device)
 
 decoder_net = Decoder(
-    german,
+    english,
+    input_size,
     embedding_size,
     hidden_size,
     output_size,
@@ -195,7 +199,7 @@ if load_model:
 
 # sentence = "ein boot mit mehreren männern darauf wird von einem großen pferdegespann ans ufer gezogen."
 # sentence = "der edison trust attackierte also vor allem die punkte"
-sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
+sentence = "was ist improvac und wofür wird es angewendet" #"ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
 
 for epoch in range(PRM.NUM_EPOCHS):
     print(f"[Epoch {epoch} / {PRM.NUM_EPOCHS}]")

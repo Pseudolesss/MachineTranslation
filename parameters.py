@@ -1,14 +1,14 @@
 import numpy as np
 import torch
 
-MAX_NB_VECTOR = 1000  # High threshold for embeddings if memory not big enough.
+MAX_NB_VECTOR = 2000  # High threshold for embeddings if memory not big enough.
                     # Be sure that the first vectors are the more frequent in the file.
-VOCAB_LENGTH = 10000  # The number of word in the dataset to considered when building the input size of the model
+VOCAB_LENGTH = 1000  # The number of word in the dataset to considered when building the input size of the model
 #TODO Probleme with the generator send back by training generator (out of vocabulary problem), meanwhile leave this value to 1
 MIN_VOCAB_FREQ = 1  # Min number of time a word has to appear in the dataset in order to be considered in the vocab
 
 MAX_NB_SENTENCES = 40000  # For testing purposes
-MAX_LENGTH_SENCETENCE = 15  # Expressed in tokens
+MAX_LENGTH_SENCETENCE = 50  # Expressed in tokens
 
 DIM_VEC = 300  # DO NOT CHANGE All the embeddings use vector of size 300
 
@@ -28,7 +28,7 @@ TARGET = "target_sentence"  # DO NOT CHANGE English sentences
 
 # MODEL TRAINING PARAMETERS
 # Training hyperparameters
-NUM_EPOCHS = 10
+NUM_EPOCHS = 20
 LEARNING_RATE = 0.001
 BATCH_SIZE = 32
 SPLIT_RATIO = 0.7
