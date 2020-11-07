@@ -149,6 +149,7 @@ class Seq2Seq(nn.Module):
 # Model hyperparameters
 load_model = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 output_size = len(english.vocab)  # The input size has been defined implicitly by the embedding layers
 embedding_size = PRM.DIM_VEC
 hidden_size = PRM.HIDDEN_SIZE  # Needs to be the same for both RNN's
@@ -193,20 +194,11 @@ if load_model:
 
 
 # sentence = "ein boot mit mehreren männern darauf wird von einem großen pferdegespann ans ufer gezogen."
-sentence = "der edison trust attackierte also vor allem die punkte"
+# sentence = "der edison trust attackierte also vor allem die punkte"
+sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
 
 for epoch in range(PRM.NUM_EPOCHS):
     print(f"[Epoch {epoch} / {PRM.NUM_EPOCHS}]")
-
-    checkpoint = {"state_dict": model.state_dict(), "optimizer": optimizer.state_dict()}
-    save_checkpoint(checkpoint)
-
-    model.eval()
-
-    translated_sentence = translate_sentence(
-        model, sentence, german, english, device, max_length=PRM.MAX_LENGTH_SENCETENCE)
-
-    print(f"Translated example sentence: \n {translated_sentence}")
 
     model.train()
 
@@ -243,7 +235,16 @@ for epoch in range(PRM.NUM_EPOCHS):
         # Plot to tensorboard
         writer.add_scalar("Training loss", loss, global_step=step)
         step += 1
+    checkpoint = {"state_dict": model.state_dict(), "optimizer": optimizer.state_dict()}
+    save_checkpoint(checkpoint)
 
+    model.eval()
 
+    translated_sentence = translate_sentence(
+        model, sentence, german, english, device, max_length=PRM.MAX_LENGTH_SENCETENCE)
+
+    print(f"Translated example sentence: \n {translated_sentence}")
+
+"""print("Computing blue score")
 score = bleu(test_data[1:100], model, german, english, device)
-print(f"Bleu score {score*100:.2f}")
+print(f"Bleu score {score*100:.2f}")"""
