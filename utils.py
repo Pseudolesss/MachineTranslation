@@ -7,7 +7,7 @@ def sentence2tokens(sentence):
     return sentence.split()
 
 
-def clean_sentence(sentence, lower_sentence=False):
+def clean_sentence(sentence, lower_sentence=False, bytes_representation_for_DE_word=False):
     # Replace Number by Unknowed token and ponctuation by spaces that will be ignored later.
     # NOT Converting all in lowercase (will depend on the embedding used).
     # NOT Removing Stopwords
@@ -19,6 +19,9 @@ def clean_sentence(sentence, lower_sentence=False):
 
     sentence = re.sub(PRM.UNRELEVANT_CHAR_REGEX, PRM.UNRELEVANT_CHAR_REPLACEMENT, sentence)
     sentence = re.sub(PRM.UNRELEVANT_DIGIT_REGEX, PRM.UNRELEVANT_DIGIT_REPLACEMENT, sentence)
+
+    if bytes_representation_for_DE_word:
+        sentence = DE_sentence_to_bytes_representation_string(sentence)
 
     if lower_sentence is False:
         return sentence

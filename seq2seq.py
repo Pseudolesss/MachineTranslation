@@ -210,9 +210,12 @@ criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
 if load_model:
     load_checkpoint(torch.load("my_checkpoint.pth.tar"), model, optimizer)
 
-sentence = clean_sentence("Wenn etwas Alkohol auf der Haut verbleibt  können Sie ein brennendes Gefühl verspüren", lower_sentence=DE_lower)
+sentence = clean_sentence("Wenn etwas Alkohol auf der Haut verbleibt  können Sie ein brennendes Gefühl verspüren",
+                          lower_sentence=DE_lower,
+                          bytes_representation_for_DE_word=preprocessing.bytes_representation_for_DE_word)
 print(sentence)
-print(clean_sentence("If a bit of alcohol is left on the skin  you may get a stinging sensation ", lower_sentence=EN_lower))
+print(clean_sentence("If a bit of alcohol is left on the skin  you may get a stinging sensation ",
+                     lower_sentence=EN_lower))
 
 for epoch in range(PRM.NUM_EPOCHS):
     print(f"[Epoch {epoch} / {PRM.NUM_EPOCHS}]")
