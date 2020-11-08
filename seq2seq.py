@@ -5,7 +5,7 @@ from torchtext.data import Field, BucketIterator
 import random
 from torch.utils.tensorboard import SummaryWriter  # to print to tensorboard
 from utils import translate_sentence, bleu, save_checkpoint, load_checkpoint,\
-    DataFrameDataset, DE_sentence_to_bytes_representation_string
+    DataFrameDataset, DE_sentence_to_bytes_representation_string, clean_sentence
 
 import parameters as PRM
 from preprocess import Preprocess
@@ -17,9 +17,17 @@ preprocessing.load_wiki()
 preprocessing.drop_longest_wiki_sentences()
 
 # TODO select one of the embedding and train/save in a different file/package
-# preprocessing.load_word2vec()
+# TODO correctly set up if we need to lower the sentences or not according to
+#  the embedding (Meaningful in german). (Should also be taken into account when taking input for testing)
+
+#preprocessing.load_word2vec()
+#DE_lower, EN_lower = True, True
+
 # preprocessing.load_glove()
+#DE_lower, EN_lower = True, True
+
 preprocessing.load_fasttext()
+DE_lower, EN_lower = False, True
 
 # Check for the German word2vec embedding with bytes representation
 if preprocessing.bytes_representation_for_DE_word:
@@ -27,9 +35,12 @@ if preprocessing.bytes_representation_for_DE_word:
         .apply(DE_sentence_to_bytes_representation_string)
 
 
-german = Field(init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
+german = Field(lower=DE_lower,
+               init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
 
-english = Field(is_target=True, init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
+english = Field(lower=EN_lower,
+                is_target=True,
+                init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
 
 
 train_data, test_data = DataFrameDataset(
@@ -39,6 +50,9 @@ train_data, test_data = DataFrameDataset(
         (PRM.TARGET, english)
     ]
 ).split(split_ratio=PRM.SPLIT_RATIO)
+
+print(len(train_data))
+print(len(test_data))
 
 
 german.build_vocab(train_data,
@@ -196,13 +210,9 @@ criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
 if load_model:
     load_checkpoint(torch.load("my_checkpoint.pth.tar"), model, optimizer)
 
-
-# sentence = "ein boot mit mehreren männern darauf wird von einem großen pferdegespann ans ufer gezogen."
-# sentence = "der edison trust attackierte also vor allem die punkte"
-# sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"  # "was ist improvac und wofür wird es angewendet"
-sentence = " ".join(getattr(test_data.examples[0], "source_sentence"))
+sentence = clean_sentence("Wenn etwas Alkohol auf der Haut verbleibt  können Sie ein brennendes Gefühl verspüren", lower_sentence=DE_lower)
 print(sentence)
-print(" ".join(getattr(test_data.examples[0], "target_sentence")))
+print(clean_sentence("If a bit of alcohol is left on the skin  you may get a stinging sensation ", lower_sentence=EN_lower))
 
 for epoch in range(PRM.NUM_EPOCHS):
     print(f"[Epoch {epoch} / {PRM.NUM_EPOCHS}]")

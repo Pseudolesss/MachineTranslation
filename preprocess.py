@@ -70,9 +70,10 @@ class Preprocess(object):
         if self.sentences is None:
             return
 
-        count_word = lambda x: len(utils.sentence2tokens(x))
+        count_word = lambda x: len(utils.sentence2tokens(x)) if type(x) == str else 0
         sentences_nb_words = self.sentences.applymap(count_word)
         self.sentences = self.sentences.loc[(sentences_nb_words < max_length_threshold).all(1)]
+        self.sentences = self.sentences.loc[(sentences_nb_words > 0).all(1)]
 
 
     # To be used as a vectorial mapping function
