@@ -10,6 +10,8 @@ from utils import translate_sentence, bleu, save_checkpoint, load_checkpoint,\
 import parameters as PRM
 from preprocess import Preprocess
 
+import pickle
+
 # Reference to data
 preprocessing = Preprocess()
 preprocessing.load_wiki()
@@ -207,8 +209,16 @@ optimizer = optim.Adam(model.parameters(), lr=PRM.LEARNING_RATE)
 pad_idx = english.vocab.stoi[PRM.PAD_TOKEN]
 criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
 
+# pickle save system
+loss_history = []
+translated_sentence_history = []
+
 if load_model:
     load_checkpoint(torch.load("my_checkpoint.pth.tar"), model, optimizer)
+    with open('loss_history.pkl', 'rb') as f:
+        loss_history = pickle.load(f)
+    with open('translated_sentence_history.pkl', 'rb') as f:
+        translated_sentence_history = pickle.load(f)
 
 sentence = clean_sentence("Wenn etwas Alkohol auf der Haut verbleibt  können Sie ein brennendes Gefühl verspüren",
                           lower_sentence=DE_lower,
@@ -241,6 +251,7 @@ for epoch in range(PRM.NUM_EPOCHS):
 
         optimizer.zero_grad()
         loss = criterion(output, target)
+        loss_history.append(loss)
 
         # Back prop
         loss.backward()
@@ -262,9 +273,21 @@ for epoch in range(PRM.NUM_EPOCHS):
 
     translated_sentence = translate_sentence(
         model, sentence, german, english, device, max_length=PRM.MAX_LENGTH_SENCETENCE)
+    translated_sentence_history.append(translated_sentence)
 
     print(f"Translated example sentence: \n {translated_sentence}")
-
+    # save loss history and translated sentence history at each epoch
+    with open('loss_history.pkl', 'wb') as f:
+        pickle.dump(loss_history, f)
+    with open('translated_sentence_history.pkl', 'wb') as f:
+        pickle.dump(translated_sentence_history, f)
 """print("Computing blue score")
 score = bleu(test_data[1:100], model, german, english, device)
 print(f"Bleu score {score*100:.2f}")"""
+
+"""with open('loss_history.pkl', 'rb') as f:
+    loss_history_test = pickle.load(f)
+with open('translated_sentence_history.pkl', 'rb') as f:
+    translated_sentence_history_test = pickle.load(f)
+print(loss_history_test)
+print(translated_sentence_history_test)"""
