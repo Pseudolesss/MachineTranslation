@@ -10,6 +10,8 @@ from utils import translate_sentence, bleu, save_checkpoint, load_checkpoint,\
 import parameters as PRM
 from preprocess import Preprocess
 
+import random
+
 import pickle
 
 # Reference to data
@@ -44,6 +46,8 @@ english = Field(lower=EN_lower,
                 is_target=True,
                 init_token=PRM.SOS_TOKEN, eos_token=PRM.EOS_TOKEN, pad_token=PRM.PAD_TOKEN, unk_token=PRM.UNK_TOKEN)
 
+random.seed(0)  # Set seed for reproducibility purposes
+rnd = random.getstate()
 
 train_data, test_data = DataFrameDataset(
     df=preprocessing.sentences,
@@ -51,7 +55,7 @@ train_data, test_data = DataFrameDataset(
         (PRM.SOURCE, german),
         (PRM.TARGET, english)
     ]
-).split(split_ratio=PRM.SPLIT_RATIO)
+).split(split_ratio=PRM.SPLIT_RATIO, random_state=rnd)
 
 print(len(train_data))
 print(len(test_data))
