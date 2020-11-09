@@ -24,19 +24,20 @@ preprocessing.drop_longest_wiki_sentences()
 # TODO correctly set up if we need to lower the sentences or not according to
 #  the embedding (Meaningful in german). (Should also be taken into account when taking input for testing)
 
-#preprocessing.load_word2vec()
-#DE_lower, EN_lower = True, True
+# preprocessing.load_word2vec()
+# DE_lower, EN_lower, special_token_initiated = True, True, False
 
-# preprocessing.load_glove()
-#DE_lower, EN_lower = True, True
+preprocessing.load_glove()
+DE_lower, EN_lower, special_token_initiated = True, True, False
 
-preprocessing.load_fasttext()
-DE_lower, EN_lower = False, True
+# preprocessing.load_fasttext()
+# DE_lower, EN_lower, special_token_initiated = False, True, True
 
 # Check for the German word2vec embedding with bytes representation
 if preprocessing.bytes_representation_for_DE_word:
     preprocessing.sentences[PRM.SOURCE] = preprocessing.sentences[PRM.SOURCE]\
         .apply(DE_sentence_to_bytes_representation_string)
+
 
 
 german = Field(lower=DE_lower,
@@ -65,6 +66,14 @@ german.build_vocab(train_data,
                    max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ, vectors=preprocessing.DE_vec)
 english.build_vocab(train_data,
                     max_size=PRM.VOCAB_LENGTH, min_freq=PRM.MIN_VOCAB_FREQ, vectors=preprocessing.EN_vec)
+
+# Assign default vector value for the begin and enc of sentence token
+if not special_token_initiated:
+    german.vocab.vectors[german.vocab.stoi[PRM.SOS_TOKEN]] = torch.Tensor([1] * PRM.DIM_VEC)
+    english.vocab.vectors[english.vocab.stoi[PRM.SOS_TOKEN]] = torch.Tensor([1] * PRM.DIM_VEC)
+
+    german.vocab.vectors[german.vocab.stoi[PRM.EOS_TOKEN]] = torch.Tensor([-1] * PRM.DIM_VEC)
+    english.vocab.vectors[english.vocab.stoi[PRM.EOS_TOKEN]] = torch.Tensor([-1] * PRM.DIM_VEC)
 
 # Add pretrained vectors to the vocabulary
 # german.vocab.set_vectors(
