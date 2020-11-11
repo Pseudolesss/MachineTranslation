@@ -9,6 +9,11 @@
 *.bin
 *.csv
 
+.vector_cache/
+.data/
+runs/
+datasets/
+
 # pycharm
 .idea/
 

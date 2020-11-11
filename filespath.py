@@ -9,12 +9,12 @@ EMBEDDING_REL_FOLDER = Path("embeddings/")
 
 #FILES needed
 EN_WORD2VEC_BIN_FILE = Path("GoogleNews-vectors-negative300.bin")
-EN_WORD2VEC_FILE = Path("en_word2vec.txt")
-DE_WORD2VEC_FILE = Path("de_word2vec.txt")  # Careful, this txt file is using the Glove format instead of the word2vec one
-EN_GLOVE_FILE = Path("glove.840B.300d.txt")
-DE_GLOVE_FILE = Path("de_glove.txt")
-EN_FASTTEXT_FILE = Path("cc.en.300.vec")
-DE_FASTTEXT_FILE = Path("cc.de.300.vec")
+EN_WORD2VEC_FILE = Path("EN_word2vec.txt")
+DE_WORD2VEC_FILE = Path("DE_word2vec.txt")  # Careful, this txt file is using the Glove format instead of the word2vec one
+EN_GLOVE_FILE = Path("EN_glove.txt")
+DE_GLOVE_FILE = Path("DE_glove.txt")
+EN_FASTTEXT_FILE = Path("EN_fasttext.txt")
+DE_FASTTEXT_FILE = Path("DE_fasttext.txt")
 
 RAW_SENTENCES_WIKIPEDIA = Path("de-en.tmx")  # TMX is a specific file format for aligned corpus data (similar to XML)
 SENTENCES_WIKIPEDIA = Path("de-en.csv")  # The Pandas Dataframe containing cleaned sentences are stored in a pickle file
