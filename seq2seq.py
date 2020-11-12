@@ -69,11 +69,11 @@ english.build_vocab(train_data,
 
 # Assign default vector value for the begin and enc of sentence token
 if not special_token_initiated:
-    german.vocab.vectors[german.vocab.stoi[PRM.SOS_TOKEN]] = torch.Tensor([1] * PRM.DIM_VEC)
-    english.vocab.vectors[english.vocab.stoi[PRM.SOS_TOKEN]] = torch.Tensor([1] * PRM.DIM_VEC)
+    german.vocab.vectors[german.vocab.stoi[PRM.SOS_TOKEN]] = PRM.SOS_TOKEN_VEC
+    english.vocab.vectors[english.vocab.stoi[PRM.SOS_TOKEN]] = PRM.SOS_TOKEN_VEC
 
-    german.vocab.vectors[german.vocab.stoi[PRM.EOS_TOKEN]] = torch.Tensor([-1] * PRM.DIM_VEC)
-    english.vocab.vectors[english.vocab.stoi[PRM.EOS_TOKEN]] = torch.Tensor([-1] * PRM.DIM_VEC)
+    german.vocab.vectors[german.vocab.stoi[PRM.EOS_TOKEN]] = PRM.EOS_TOKEN_VEC
+    english.vocab.vectors[english.vocab.stoi[PRM.EOS_TOKEN]] = PRM.EOS_TOKEN_VEC
 
 # Add pretrained vectors to the vocabulary
 # german.vocab.set_vectors(

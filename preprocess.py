@@ -1,7 +1,4 @@
-from translate.storage.tmx import tmxfile
 from gensim.models import KeyedVectors
-from gensim.scripts.glove2word2vec import glove2word2vec  # For the German word2vec in Glove format
-from gensim.test.utils import datapath, get_tmpfile
 from tmx2dataframe import tmx2dataframe
 import pandas as pd
 import os.path
@@ -16,23 +13,14 @@ class Preprocess(object):
 
     bytes_representation_for_DE_word = False  # the DE word2vec embedding has its word represented with bytes representation "für" => b'f\xc3\xbcr'
 
-    EN_vec = None  # KeyedVector
-    DE_vec = None  # KeyedVector
-    sentences = None  # is a generator of nodes (source, target)
-    
-    def model_from_glove_format(self, glove_format):
-
-        glove_file = datapath(glove_format)
-        tmp_file = get_tmpfile("test_word2vec.txt")
-        glove2word2vec(glove_file, tmp_file)
-
-        model = KeyedVectors.load_word2vec_format(tmp_file, limit=PRM.MAX_NB_VECTOR)
-        return model
+    EN_vec = None  # English Embedding vectors
+    DE_vec = None  # English Embedding vectors
+    sentences = None  # Pandas dataframe with german and english sentences
 
     def load_word2vec(self):
         self.bytes_representation_for_DE_word = True
 
-        # Check if text embeddings exist for english only, if not need to extract it from the google BIN model
+        # Check if text embeddings exist for english as txt file, if not need to extract it from the google BIN model
         if os.path.isfile(P.paths[P.EN_WORD2VEC]):
             self.EN_vec = vocab.Vectors(P.paths[P.EN_WORD2VEC], max_vectors=PRM.MAX_NB_VECTOR)
         else:
@@ -55,7 +43,7 @@ class Preprocess(object):
 
     def load_wiki(self, offset=0, nb_pair_sentences=PRM.MAX_NB_SENTENCES):
 
-        # Check if cleaned sentences panda dataframe exists
+        # Check if cleaned sentences panda dataframe exists as a CSV file, if not: generate it
         if os.path.isfile(P.paths[P.SENTENCES]):
             self.sentences = pd.read_csv(P.paths[P.SENTENCES], skiprows=offset, nrows=nb_pair_sentences)[[PRM.SOURCE, PRM.TARGET]]
 
@@ -74,49 +62,3 @@ class Preprocess(object):
         sentences_nb_words = self.sentences.applymap(count_word)
         self.sentences = self.sentences.loc[(sentences_nb_words < max_length_threshold).all(1)]
         self.sentences = self.sentences.loc[(sentences_nb_words > 0).all(1)]
-
-
-    # To be used as a vectorial mapping function
-    # Individual vector SHOULD NOT be normalized (embeddings aren't normalized either)
-    def string2vec(self, string, is_EN=True):
-
-            # English embedding
-            if is_EN and self.EN_vec is not None:
-                if string in self.EN_vec.vocab:
-                    return self.EN_vec[string]
-                else:
-                    return PRM.UNK_TOKEN_VEC
-
-            # German embedding
-            elif not is_EN and self.DE_vec is not None:
-
-                # check for bytes representation
-                if self.bytes_representation_for_DE_word:
-                    key = str(string.encode("utf8"))  # "b'f\\xc3\\xbcr'"
-                else:
-                    key = string  # "für"
-
-                if key in self.DE_vec.vocab:
-                    return self.DE_vec[key]
-                else:
-                    return PRM.UNK_TOKEN_VEC
-            else:
-                return string
-
-    def vec2string(self, vector, is_EN=True):
-        # TODO for the moment, return the closest but should check for validation (no ponctuation, etc)
-
-        # English embedding
-        if is_EN and self.EN_vec is not None:
-            return self.EN_vec.similar_by_vector(vector)[0]
-
-        # German embedding
-        elif not is_EN and self.DE_vec is not None:
-            word = self.DE_vec.similar_by_vector(vector)[0]
-            # check for bytes representation
-            if self.bytes_representation_for_DE_word:
-                word = eval(word).decode("utf8")
-            return word
-
-        else:
-            return PRM.UNK_TOKEN

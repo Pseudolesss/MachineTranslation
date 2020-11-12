@@ -1,6 +1,9 @@
 import re
 import parameters as PRM
-
+import torch
+from torchtext.data import Dataset, Example
+from torchtext.data.metrics import bleu_score
+import pandas as pd
 
 def sentence2tokens(sentence):
     # return a list of tokens from a string. The string is assumed to be cleaned
@@ -8,7 +11,7 @@ def sentence2tokens(sentence):
 
 
 def clean_sentence(sentence, lower_sentence=False, bytes_representation_for_DE_word=False):
-    # Replace Number by Unknowed token and ponctuation by spaces that will be ignored later.
+    # Replace numbers and ponctuation by spaces that will be ignored later with str.split().
     # NOT Converting all in lowercase (will depend on the embedding used).
     # NOT Removing Stopwords
     # NO Stemming and Lemmatization (unproper to translation)
@@ -28,28 +31,15 @@ def clean_sentence(sentence, lower_sentence=False, bytes_representation_for_DE_w
     else:
         return sentence.lower()
 
+# Utility function needed to handle the german encoding which was badly encoded
 def DE_sentence_to_bytes_representation_string(sentence):
     # The sentence is considered as CLEANED
     tokens = sentence2tokens(sentence)
     return " ".join([str(token.encode("utf-8")) for token in tokens])
 
 
-
-############################################################################################
-
-import torch
-import spacy
-from torchtext.data.metrics import bleu_score
-import sys
-
-
+# Send back a translation from a model with the corresponding vocabularies
 def translate_sentence(model, sentence, german, english, device, max_length=50):
-    # print(sentence)
-
-    # sys.exit()
-
-    # Load german tokenizer
-    spacy_ger = spacy.load('de_core_news_md')
 
     # Create tokens using spacy and everything in lower case (which is what our vocab is)
     if type(sentence) == str:
@@ -57,9 +47,6 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
     else:
         tokens = [clean_sentence(word) for word in sentence]
 
-    # print(tokens)
-
-    # sys.exit()
     # Add <SOS> and <EOS> in beginning and end respectively
     tokens.insert(0, german.init_token)
     tokens.append(german.eos_token)
@@ -71,8 +58,6 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
             text_to_indices.append(german.vocab.stoi[token])
         else:
             text_to_indices.append(german.vocab.stoi[PRM.UNK_TOKEN])
-
-    # text_to_indices = [german.vocab.stoi[token] for token in tokens if token in german.vocab.stoi.keys() else german.vocab.stoi[PRM.UNK_TOKEN]]
 
     # Convert to Tensor
     sentence_tensor = torch.LongTensor(text_to_indices).unsqueeze(1).to(device)
@@ -101,7 +86,7 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
     # remove start token
     return translated_sentence[1:]
 
-
+# Send back the bleu score over several pairs of predictions and targets sentences
 def bleu(data, model, german, english, device):
     targets = []
     outputs = []
@@ -130,9 +115,7 @@ def load_checkpoint(checkpoint, model, optimizer):
     optimizer.load_state_dict(checkpoint["optimizer"])
 
 
-from torchtext.data import Dataset, Example
-import pandas as pd
-
+# Utility class to be able to prepare and split a Pandas dataframe in order to initiate batches
 class DataFrameDataset(Dataset):
     def __init__(self, df: pd.DataFrame, fields: list):
         super(DataFrameDataset, self).__init__(
