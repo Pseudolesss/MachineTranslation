@@ -4,34 +4,26 @@
 
 A 'yml' file containing a conda environment can be used to generate a proper environment in order to launch this project
 
-[Conda cheat sheet](https://docs.conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf )
+```bash
+cd project-root/
+conda env create --file environment.yml
+conda activate machineTranslation36
+jupyter notebook
+```
 
-TODO: update the yaml file with
+## File needed for running the notebook
 
-- pandas
-- jupyter
-- pytorch
-- cudatoolkit
-- cudnn
+The required files (prepared dataset, embeddings and trained models) are compressed in an archive at this address : [Needed Files Archive](https://drive.google.com/file/d/1pYErSWHwz6JelbCFruM4Kw2BRYN1jWIW/view?usp=sharing)
 
-TODO: give a list of dependencies available only for pip in a .txt (pip install dependencies.txt)
+Just download it straightaway and decompress it and place the folders at the project root. The following links are just to indicates the sources of the files. If a problem occurs, do not hesitate to notify one of us by email (j.lhoest@student.uliege.be)
 
-- translate-toolkit
-- tmx2dataframe
+### Parallel dataset
 
+The dataset have to be decompressed and placed in the **datasets** folder. The data is presented in a tmx file (translation memory file) and was provided by the Opus project. The dataset used consists in German sentences as sources and English sentences as targets. The corpus consists in indication from medication notices. 
 
+[European Medicines Agency corpus](http://opus.nlpl.eu/ELRC_2682-v1.php )
 
-## Parallel datasets
-
-The datasets have to be decompressed and placed in the **datasets** folder
-
-[Wikipedia en-de](http://opus.nlpl.eu/download.php?f=Wikipedia%2Fv1.0%2Ftmx%2Fde-en.tmx.gz )
-
-[Additional references to // datasets](https://lionbridge.ai/datasets/25-best-parallel-text-datasets-for-machine-translation-training/ )
-
-[Additional references to // datasets](http://opus.nlpl.eu/ )
-
-## Pre Trained embeddings vectors
+### Pre Trained embeddings vectors
 
 The embeddings files containing vectors have to be decompressed and placed in the **embeddings** folder
 
@@ -43,12 +35,16 @@ The embeddings files containing vectors have to be decompressed and placed in th
 
 [fasttext de](https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.de.300.vec.gz)
 
+[word2vec de & glove de](https://deepset.ai/german-word-embeddings) (see command to download them)
+
 ```bash
-curl -o de_glove.txt https://int-emb-glove-de-wiki.s3.eu-central-1.amazonaws.com/vectors.txt
-curl -o de_word2vec.txt https://int-emb-word2vec-de-wiki.s3.eu-central-1.amazonaws.com/vectors.txt
+curl -o DE_glove.txt https://int-emb-glove-de-wiki.s3.eu-central-1.amazonaws.com/vectors.txt
+curl -o DE_word2vec.txt https://int-emb-word2vec-de-wiki.s3.eu-central-1.amazonaws.com/vectors.txt
 ```
+
+
 
 ## Notes
 
-If there is a problem in calling the file, check *filespath.py* and see if the names of the directories and files are correct
+Only the DE word2vec and DE glove embeddings come from other institutions than the one which have design the models (Google and Stanford). It is possible that the results could be invalid because of the validity of the files which is unknowed.
 
