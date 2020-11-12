@@ -1,5 +1,9 @@
 # Machine translation
 
+## Presentation Notebook
+
+[notebook](https://github.com/Pseudolesss/MachineTranslation/blob/main/notebook.ipynb)
+
 ## Conda environement
 
 A 'yml' file containing a conda environment can be used to generate a proper environment in order to launch this project
